@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken')
 require('dotenv').config()
 const secret = process.env.JWT_TOKEN
 
+
 async function userRegister (req, res) {
   const{ name, email, password } = req.body
   const user = new User({ name, email, password })
@@ -35,4 +36,43 @@ async function userAuth (req, res) {
   }
 }
 
-module.exports = {userRegister, userAuth}
+async function emailUpdate(req, res) {
+  const { name, email } = req.body
+
+  try {
+    let user = await User.findOneAndUpdate(
+      { _id: req.user._id },
+      { $set: { name: name, email: email } },
+      { upsert: true, 'new': true }
+    )
+    res.json(user)
+  } catch (error) {
+    res.status(401).json({ error: error })
+  }
+}
+
+async function passwordUpdate(req, res) {
+  const { password } = req.body
+
+  try {
+    let user = await User.findOne({ _id: req.user._id })
+    user.password = password
+    user.save()
+    res.json(user)
+  } catch (error) {
+    res.status(401).json({ error: error })
+  }
+};
+
+async function deleteUser(req, res) {
+  try {
+    let user = await User.findOne({ _id: req.user._id })
+    await user.delete()
+    res.json({ message: 'OK' }).status(201)
+  } catch (error) {
+    res.status(500).json({ error: error })
+  }
+}
+
+
+module.exports = {userRegister, userAuth, emailUpdate, passwordUpdate, deleteUser}

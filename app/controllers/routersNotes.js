@@ -11,6 +11,18 @@ async function createdNote(req, res) {
   }
 }
 
+async function searchNotes(req, res) {
+  const {query} = req.query
+  try {
+    let notes = await Note
+      .find({author: req.user._id})
+      .find({$text: { $search: query }})
+    res.json(notes)
+  } catch (error) {
+    res.json({error , message: 'Fail to search'}).status(500)
+  }
+}
+
 async function downNote(req, res) {
   try {
     const { id } = req.params
@@ -33,7 +45,7 @@ async function showAllNotes(req, res) {
   }
 }
 
-async function updateNotes(req, res) {
+async function updateNote(req, res) {
   const { title, body } = req.body
   const { id } = req.params
   
@@ -55,6 +67,21 @@ async function updateNotes(req, res) {
   }
 }
 
+async function deleteNote(req, res) {
+  const {id}= req.params 
+  try {
+    let note = await Note.findById(id)
+    if(isOwner(req.user, note)) {
+      await note.delete()
+      res.json({ message: 'Sucessful to delete' }).status(204) 
+    } else {
+      res.status(403).json({error: 'Permission Denied: user no permited'})
+    }
+  } catch (error) {
+    res.status(403).json({ error, message:'Fail to Delete... check in this error' })
+  }
+} 
+
 //method to compare if user is note author
 function isOwner(user, note) {
   if(JSON.stringify(user._id) == JSON.stringify(note.author._id))
@@ -64,4 +91,4 @@ function isOwner(user, note) {
 }
 
 
-module.exports = { createdNote, downNote, showAllNotes, updateNotes } 
+module.exports = { createdNote, downNote, showAllNotes, updateNote, deleteNote, searchNotes } 
